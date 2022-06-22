@@ -1,0 +1,4 @@
+venv
+GOM/TSeries
+GOM/*.nc
+North_Sea/*.nc
