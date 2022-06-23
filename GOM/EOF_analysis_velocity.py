@@ -15,6 +15,22 @@ import glob
 from eofs.multivariate.standard import MultivariateEof
 
 # %%
+def my_svd(uu,vv,tresh=0.90,plot=False):
+
+    C=np.dot(uu.T, vv)
+    U,L,Vh = np.linalg.svd(C)
+    V=Vh.T
+    SCF=L/np.sum(L)
+    indx=np.argwhere(np.cumsum(SCF)>tresh)[0]
+
+    U=U[:,1:indx]
+    V=V[:,1:indx]
+    if plot:
+        plt.plot(SCF)
+        plt.xlim(0,10)
+        plt.plot(np.cumsum(SCF))
+    return U,L,V
+# %%
 data_path='./new_5km-radius/'
 files=sorted(glob.glob('new_5km-radius/GOM-1-*2012*'))
 vel_arr=[]
@@ -77,22 +93,50 @@ data.isel(depth=0,mode=0).eofs_u
 # %% http://brunnur.vedur.is/pub/halldor/PICKUP/eof.pdf
 uu=(data_stacked.u-data_stacked.u.mean(dim='ocean_time')).data
 vv=(data_stacked.v-data_stacked.v.mean(dim='ocean_time')).data
-# %%
-C=np.dot(uu.T, vv)
-# %%
-U,L,Vh = np.linalg.svd(C)
 
-# %%
-V=Vh.T
-#%%
-SCF=L/np.sum(L)
-plt.plot(SCF)
-plt.xlim(0,10)
-plt.plot(np.cumsum(SCF))
 # %%
 A=uu@U
 B=vv@V
 # %%
 re_U=A@U.T
 re_V=B@V.T
+# %%
+data
+# %%
+t=data['ocean_time'].data
+velocities=data[['u','v']].copy()
+velocities['u_tide']=xr.zeros_like(velocities.u)
+velocities['v_tide']=xr.zeros_like(velocities.v)
+#%%
+for node in data.node.values:
+    lat=data.isel(node=node,depth=0).lat.values
+    tmp_xr=[]
+    for depth in data.depth.values:
+        uvel=data.isel(node=node,depth=depth).u.values
+        vvel=data.isel(node=node,depth=depth).v.values
+        coef=solve(t,u=uvel,v=vvel,lat=lat)
+        tide=reconstruct(t, coef)
+        velocities.u_tide[:,node,depth]=tide.u
+        velocities.v_tide[:,node,depth]=tide.v
+
+#%%
+velocities['u_residue']=velocities.u-velocities.u_tide
+velocities['v_residue']=velocities.v-velocities.v_tide   
+# %%
+velocities.to_netcdf('velocities.nc')
+# %%
+uu=(velocities.u_residue-velocities.u_residue.mean(dim='ocean_time'))
+vv=(velocities.v_residue-velocities.v_residue.mean(dim='ocean_time'))
+
+# %%
+U,L,V = my_svd(uu.isel(depth=0), vv.isel(depth=0), plot=True)
+# %%
+L
+# %%
+np.cumsum(L)/sum(L)
+# %%
+A=uu.isel(depth=0).data@U
+B=vv.isel(depth=0).data@V
+# %%
+plt.plot(A
 # %%
