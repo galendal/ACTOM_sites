@@ -15,6 +15,23 @@ import glob
 from eofs.multivariate.standard import MultivariateEof
 
 # %%
+# def my_tide(data, t_name='ocean_time',space_name='zz',u_name='u',v_name='v', tide_name='_tide'):
+#     t=data[t_name].data
+#     out=data[[u_name,v_name]].copy()
+#     out[u_name+tide_name]=xr.zeros_like(out[u_name])
+#     out[v_name+tide_name]=xr.zeros_like(out[v_name])
+#     for node in out[space_name].values:
+#         lat=data.isel(node=node).lat.values
+#         tmp_xr=[]
+#         for depth in data.depth.values:
+#             uvel=data.isel(node=node,depth=depth).u.values
+#             vvel=data.isel(node=node,depth=depth).v.values
+#             coef=solve(t,u=uvel,v=vvel,lat=lat)
+#             tide=reconstruct(t, coef)
+#             velocities.u_tide[:,node,depth]=tide.u
+#             velocities.v_tide[:,node,depth]=tide.v
+
+#     return out
 def my_svd(uu,vv,tresh=0.90,plot=False):
 
     C=np.dot(uu.T, vv)
@@ -138,5 +155,5 @@ np.cumsum(L)/sum(L)
 A=uu.isel(depth=0).data@U
 B=vv.isel(depth=0).data@V
 # %%
-plt.plot(A
+
 # %%
