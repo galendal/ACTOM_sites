@@ -11,6 +11,8 @@ from windrose import WindroseAxes
 import hvplot.xarray
 from eofs.xarray import Eof
 import glob
+import pyts as pyts
+import pyts.image as pytsimag
 
 from eofs.multivariate.standard import MultivariateEof
 
@@ -32,21 +34,55 @@ from eofs.multivariate.standard import MultivariateEof
 #             velocities.v_tide[:,node,depth]=tide.v
 
 #     return out
-def my_svd(uu,vv,tresh=0.90,plot=False):
+
+def my_svd(data, tname='ocean_time', uname='u', vname='v',tresh=0.90,plot=False):
+    u_mean=data[uname].mean(dim=tname)
+    v_mean=data[uname].mean(dim=tname)
+    uu=(data[uname]-u_mean).data
+    vv=(data[vname]-v_mean).data
 
     C=np.dot(uu.T, vv)
     U,L,Vh = np.linalg.svd(C)
+    
     V=Vh.T
     SCF=L/np.sum(L)
-    indx=np.argwhere(np.cumsum(SCF)>tresh)[0]
+    indx=int(np.argwhere(np.cumsum(SCF)>tresh)[0])+1
+    
 
-    U=U[:,1:indx]
-    V=V[:,1:indx]
+    U=U[:,0:indx]
+    V=V[:,0:indx]
+    L=L[0:indx]
+    SCF=SCF[0:indx]
+    A=uu@U
+    B=vv@V
+    
+    re_U=A@U.T
+    re_V=B@V.T
     if plot:
         plt.plot(SCF)
         plt.xlim(0,10)
         plt.plot(np.cumsum(SCF))
-    return U,L,V
+    print(A.shape)
+    out=data.copy()
+    out['u_pcs']=((tname,'mode'),A)
+    out['v_pcs']=((tname,'mode'),B)
+    out['u_eofs']=((u_mean.dims + ('mode',)),U)
+    out['v_eofs']=((v_mean.dims + ('mode',)),V)
+    out['eigen']=(('mode'),L)
+    out['SCF']=(('mode'),SCF)
+
+    return out
+
+
+#%%
+def plot_eofs(data):
+    fig,  ax2 = plt.subplots(nrows=1)
+    ax2.tricontour(data.lon, data.lat, data, levels=14, colors='k')
+    ax2.tricontourf(data.lon, data.lat, data)
+    ax2.scatter(data.lon,data.lat, color='k')
+    ax2.colorbar()
+
+
 # %%
 data_path='./new_5km-radius/'
 files=sorted(glob.glob('new_5km-radius/GOM-1-*2012*'))
@@ -110,7 +146,7 @@ data.isel(depth=0,mode=0).eofs_u
 # %% http://brunnur.vedur.is/pub/halldor/PICKUP/eof.pdf
 uu=(data_stacked.u-data_stacked.u.mean(dim='ocean_time')).data
 vv=(data_stacked.v-data_stacked.v.mean(dim='ocean_time')).data
-
+U,L,V = my_svd(uu, vv)
 # %%
 A=uu@U
 B=vv@V
@@ -156,4 +192,9 @@ A=uu.isel(depth=0).data@U
 B=vv.isel(depth=0).data@V
 # %%
 
+# %%
+uu=data.isel(depth=0).u-data.isel(depth=0).u.mean(dim='ocean_time')
+vv=data.isel(depth=0).v-data.isel(depth=0).v.mean(dim='ocean_time')
+# %%
+tmp=uu.data@uu.T.data
 # %%
