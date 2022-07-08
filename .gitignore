@@ -1,4 +1,5 @@
 venv
 GOM/TSeries
 GOM/*.nc
+GOM/Figures*
 North_Sea/*.nc
