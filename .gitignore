@@ -1,5 +1,5 @@
 venv
 GOM/TSeries
 GOM/*.nc
-GOM/Figures*
+GOM/new_5km-radius
 North_Sea/*.nc
