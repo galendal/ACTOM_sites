@@ -10,35 +10,15 @@ import openpyxl
 import pandas as pd
 import json
 import re
-#%%
-d = Dataset('https://thredds.met.no/thredds/dodsC/fou-hi/norkyst800m-1h/NorKyst-800m_ZDEPTHS_his.an.2018120500.nc')
-print(d.variables['depth'][3:7])
-# %%
-# %%
-troll_lat=60.645556
-troll_lon=3.726389
-# %%
-lat=d.variables['lat'][:].data
-lon=d.variables['lon'][:].data
-# %%
-abslat=np.abs(lat-troll_lat)
-abslon=np.abs(lon-troll_lon)
-latlonidx = np.unravel_index(np.argmin(np.maximum(abslon,abslat)),lat.shape)
-# %%
-latspan=5
-lonspan=4
+from scipy import spatial
 
-# %%
-ue=d.variables['u_eastward'][:,:,latlonidx[0]-latspan:latlonidx[0]+latspan,latlonidx[1]-lonspan:latlonidx[1]+lonspan].data
-# %%
-d.variables['u_eastward']
-# %%
-xd= xr.open_dataset('https://thredds.met.no/thredds/dodsC/fou-hi/norkyst800m-1h/NorKyst-800m_ZDEPTHS_his.an.2018120500.nc')
-# %%
-dd=Dataset('https://thredds.met.no/thredds/dodsC/sea/norkyst800mv0_24h/NorKyst-800m_ZDEPTHS_avg.fc.2019022612.nc')
-# %%
-tmp=utm.to_latlon(554834.84, 6707818.42, 31,'V')
-# %%
+#%%
+def dms2dd(degrees, minutes, seconds, direction):
+    dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
+    if direction == 'S' or direction == 'W':
+        dd *= -1
+    return dd;
+
 def dd2dms(deg):
     d = int(deg)
     md = abs(deg - d) * 60
@@ -46,61 +26,53 @@ def dd2dms(deg):
     sd = (md - m) * 60
     return [d, m, sd]
 
-# %%
-wb = openpyxl.load_workbook(filename = '/Users/guttorm/Dropbox/Projects/ACTOM/Coding/Data/Norwegian site/Export.xlsx')
-ws = wb['Wellbores, all']
+def parse_dms(dms):
+    parts = re.split('[^\d\w]+', dms)
+    lat = dms2dd(parts[0], parts[1], parts[2], parts[3])
+    lng = dms2dd(parts[4], parts[5], parts[6], parts[7])
 
-from itertools import islice
-data = ws.values
-cols = next(data)[1:]
-data = list(data)
-idx = [r[0] for r in data]
-data = (islice(r, 1, None) for r in data)
-df = pd.DataFrame(data, index=idx, columns=cols)
+    return (lat, lng)
+
+def find_nearest(xd, pos=[60.645556,3.726389]): # Default to Troll
+    abslat = np.abs(xd.lat-pos[0])
+    abslon = np.abs(xd.lon-pos[1])
+    c = np.maximum(abslat, abslon)
+    ([xloc], [yloc]) = np.where(c == np.min(c))
+    return [xloc,yloc]
+
 
 #%%
-df.set_index(df['OBJECTID'],inplace=True)
-cols=['NS UTM [m]','EW UTM [m]','NS degrees','NS minutes','NS seconds','Water depth [m]','Well name']
-wells=df[cols].to_xarray()
+troll_lat=60.645556
+troll_lon=3.726389
+latspan=1
+lonspan=0.5
 
-
-
-
-
-# JUnk 
-# %%
-wb['Wellbores, all'].values
-# %%
-from itertools import islice
-data = ws.values
-cols = next(data)[1:]
-data = list(data)
-idx = [r[0] for r in data]
-data = (islice(r, 1, None) for r in data)
-df = pd.DataFrame(data, index=idx, columns=cols)
-# %%
 
 # %%
+def read_one(filenm, ):
+    xd= xr.open_dataset('https://thredds.met.no/thredds/dodsC/fou-hi/norkyst800m-1h/NorKyst-800m_ZDEPTHS_his.an.2018120500.nc')
+    xd.close()
 
-def create_well(str):
-    tmp=re.split(', |:',str)
-    X=np.float(tmp[1])
-    Y=np.float(tmp[3])
-    latlon=utm.to_latlon(X, Y, 31,'V')
-    print(X,Y)
-    print(latlon)
-    out=xr.Dataset(data_vars={
-        "X":(np.float(X)),
-        "Y":(np.float(Y)),
-        "lat":(latlon[0]),
-        "lon":(latlon[1])}
-    )
-    return out
+#%%
+xd= xr.open_dataset('https://thredds.met.no/thredds/dodsC/fou-hi/norkyst800m-1h/NorKyst-800m_ZDEPTHS_his.an.2018120500.nc')
 
-# %%
-wells=[]
-for id in df.index:
-    wells.append(create_well(id))
-wells=xr.concat(wells, dim='wells')
+tmp=xd[['h','u_eastward','v_northward']]
+tmp
+xd.close()
+#%%
+min_lon=troll_lon-lonspan
+max_lon=troll_lon+lonspan
+
+min_lat=troll_lat-latspan
+max_lat=troll_lat+latspan
 
 # %%
+mask_lon = (xd.lon >= min_lon) & (xd.lon <= max_lon)
+mask_lat = (xd.lat >= min_lat) & (xd.lat <= max_lat)
+
+#%%
+cropped_xd = xd.where(mask_lon & mask_lat, drop=True)
+# %%
+
+cropped_tmp = tmp.where(mask_lon & mask_lat, drop=True)
+cropped_tmp.h.plot.contourf(x='lon',y='lat')
