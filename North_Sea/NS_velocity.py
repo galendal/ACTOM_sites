@@ -125,16 +125,16 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"vhy:m:t:n:x:y:",["year=","month=","lat=","lon=", "spanx=","spany="])
     except getopt.GetoptError:
-        print('test.py -y <year> -m <month> -t <lat> -n <lon> -x <span x> -y <span y>')
+        print('python3 NS_velocity.py -y <year> -m <month> -t <lat> -n <lon> -x <span x> -y <span y>')
         print('or')
-        print('test.py --year=<year> --month=<month> --lat=<lat> --lon=<lon> -x <span x> -y <span y>')
+        print('python3 NS_velocity.py --year=<year> --month=<month> --lat=<lat> --lon=<lon> -x <span x> -y <span y>')
         sys.exit(2)
     
     for opt, arg in opts:
         if opt == '-h':
-            print('test.py -y <year> -m <month> -t <lat> -n <lon> -x <span x> -y <span y>')
+            print('python3 NS_velocity.py -y <year> -m <month> -t <lat> -n <lon> -x <span x> -y <span y>')
             print('or')
-            print('test.py --year=<year> --month=<month> --lat=<lat> --lon=<lon> -x <span x> -y <span y>')
+            print('python3 NS_velocity.py --year=<year> --month=<month> --lat=<lat> --lon=<lon> -x <span x> -y <span y>')
             sys.exit()
         elif opt == '-v':
             verbose = True
