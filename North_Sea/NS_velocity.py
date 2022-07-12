@@ -65,7 +65,7 @@ def crop_depth(inxarr):
 def cropped_data(inxarr, pos=[60.645556,3.726389],span=[4,4]):
     ii,jj=find_nearest(inxarr, pos)
     out = inxarr.isel(X=np.arange(jj-span[0],jj+span[0]+1),Y=np.arange(ii-span[1],ii+span[1]+1))
-    out=crop_depth(out)
+    #out=crop_depth(out)
     return out
 
 def add_utm_coords(inxarr):
@@ -115,3 +115,4 @@ for mnt in np.arange(2):
 
 all_data.to_netcdf('vel_may.nc')
 # %%
+tt=(~np.isnan(a)).cumsum(1).argmax(1)
