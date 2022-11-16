@@ -137,7 +137,7 @@ def read_one(filenm,pos=np.array([60.645556,3.726389]), span=[4,4] ):
 
 #%%
 def read_month(year=2022, month=5,pos=[60.7736192761523, 4.053348084930488],span=[10,10], save=False, verbose=True ):
-    filestem='https://thredds.met.no/thredds/dodsC/fou-hi/norkyst800m-1h/NorKyst-800m_ZDEPTHS_his.an.'
+    filestem='https://gcoos5.geos.tamu.edu/thredds/dodsC/ROFS_latest_1mo/TXLA2.ocn.his.2022_07_27_a.nc'
     filetail='00.nc'
     
     data=[]

@@ -43,19 +43,15 @@ def parse_dms(dms):
 def read_velocity_area(file='new_5km-radius/GOM-1-2012-07.nc'):
     vel=xr.open_dataset(file).load()
     vel.close()
-    vel
     return vel
 
 
 
 #%%
     
-# %% Read coordinates from Sarah
+# %% Read coordinat
 
 
-# set up orthographic map projection with
-# perspective of satellite looking down at 50N, 100W.
-# use low resolution coastlines.
 
 def make_map_GOM(vel, margin=[0.5, 0.5], savefig=True):
 
