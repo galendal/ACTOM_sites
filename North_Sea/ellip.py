@@ -16,6 +16,7 @@ from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from matplotlib import patches
+import random
 #%%
 def dms2dd(degrees, minutes, seconds, direction='E'):
     dd = degrees + minutes/60 + seconds/(60*60)
@@ -107,7 +108,7 @@ def read_NPD_xlsx(file='Export.xlsx'):
     wells['Y']=(('OBJECTID'),Y)
     return wells
 
-def NPD_xlsx_to_panda(path='/home/guttorm/Github/ACTOM/ACTOM_sites/North_Sea/Norwegian site/', 
+def NPD_xlsx_to_panda(path='/Users/guttorm/Documents/Github/ACTOM/ACTOM_sites/North_Sea/Norwegian site/', 
     file='wellbore_coordinates.xlsx'):
     filenm='file:' + path + file
     data=pd.read_excel(path+file)#, usecols=cols)
@@ -158,6 +159,7 @@ def make_map_NS(wells,Nother=None, topo=None,savefig=False,
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
+    random.seed(19)
     map = Basemap(
         projection='cyl',
         lat_0=60,lon_0=4,
@@ -232,11 +234,17 @@ def make_map_NS(wells,Nother=None, topo=None,savefig=False,
         e3 = patches.Ellipse((x, y), width, height,
                      angle=angle, linewidth=2, fill=True, color='Green',  zorder=2)
         ax.add_patch(e3)
+
+    
+    plt.title('Number of projects: '+ str(Nother+2))
+    if savefig:
+        savename='projects_' + str(Nother+2).zfill(4) + '.tiff'
+        plt.savefig(savename)
     plt.show()
    # if savefig:
     #    fig.savefig('NS_map.png')
 
-def read_topo(path='/home/guttorm/Github/ACTOM/ACTOM_sites/North_Sea/Norwegian site/', 
+def read_topo(path='/Users/guttorm/Documents/Github/ACTOM/ACTOM_sites/North_Sea/Norwegian site/', 
     file='NS_vel201903.nc'):
 
     data=xr.open_dataset(path + file).isel(time=0).h
@@ -244,13 +252,17 @@ def read_topo(path='/home/guttorm/Github/ACTOM/ACTOM_sites/North_Sea/Norwegian s
     return data
 
 #%%
-pos=read_sarah()
+
 wells=NPD_xlsx_to_panda()
 
 #%%
 topo=read_topo()
 # %%
-make_map_NS(wells=wells,Nother=10, topo=topo)
+make_map_NS(wells=wells,Nother=0, topo=topo, savefig=True)
+make_map_NS(wells=wells,Nother=100, topo=topo, savefig=True)
+make_map_NS(wells=wells,Nother=10, topo=topo, savefig=True)
+make_map_NS(wells=wells,Nother=500, topo=topo, savefig=True)
+make_map_NS(wells=wells,Nother=1000, topo=topo, savefig=True)
 # %%
 lon, lat = (4.733107, 58.969975)
 x,y,z,q=utm.from_latlon(lon,lat)

@@ -48,11 +48,7 @@ def find_nearest(xd, pos=[60.645556,3.726389]): # Default to Troll
 
 
 
-def crop_depth(inxarr):
-    tmpu=(~np.isnan(inxarr.u_eastward)).cumsum(dim='depth').argmax(dim='depth')
-    tmpv=(~np.isnan(inxarr.v_northward)).cumsum(dim='depth').argmax(dim='depth')
-    tmp=np.minimum(tmpu,tmpv)
-    return inxarr.isel(depth=tmp)
+
 
 # def find_mask(inxarr, pos=np.array([60.645556,3.726389]), span=np.array([0.15,0.15])):
 #     min_latlon=pos-span
@@ -116,6 +112,12 @@ def cropped_data(inxarr, pos=[60.645556,3.726389],span=[4,4]):
     out=crop_depth(out)
     return out
 
+def crop_depth(inxarr):
+    tmpu=(~np.isnan(inxarr.u_eastward)).cumsum(dim='depth').argmax(dim='depth')
+    tmpv=(~np.isnan(inxarr.v_northward)).cumsum(dim='depth').argmax(dim='depth')
+    tmp=np.minimum(tmpu,tmpv)
+    return inxarr.isel(depth=tmp)
+
 def add_utm_coords(inxarr):
     easting,northing, zone, letter=utm.from_latlon(inxarr.lat.values,inxarr.lon.values, force_zone_number=31)
     out=inxarr.copy()
@@ -126,12 +128,17 @@ def add_utm_coords(inxarr):
     return out
 
 def read_one(filenm,pos=np.array([60.645556,3.726389]), span=[4,4] ):
-    xd= xr.open_dataset(filenm)
+    print('in read_one: ' + filenm )
+    try: 
+        xd= xr.open_dataset(filenm)
+        tmp=xd[['h','u_eastward','v_northward']]  
+        cropped=cropped_data(tmp, pos, span)
+        xd.close()
+        print('is there')
+    except:
+        cropped=[]
+        print('is not there')
     
-    tmp=xd[['h','u_eastward','v_northward']]
-    
-    cropped=cropped_data(tmp, pos, span)
-    xd.close()
     return cropped
 
 
@@ -145,7 +152,9 @@ def read_month(year=2022, month=5,pos=[60.7736192761523, 4.053348084930488],span
         filenm=filestem + str(year) + str(month).zfill(2) + str(day+1).zfill(2)+filetail
         if verbose:
             print('Reading: ', filenm)
-        data.append(read_one(filenm,pos, span))
+        tmp=read_one(filenm,pos, span)
+        data.append(tmp)
+        
     if verbose:
         print('Concating the data')
     data=xr.concat(data, dim='time')
